@@ -6,8 +6,8 @@ changing anything else.
 
 | | Default |
 |---|---|
-| Broker (Python, ESP32) | `broker.emqx.io`, TCP port `1883` |
-| Broker (browsers) | `wss://broker.emqx.io:8084/mqtt` |
+| Broker (Python, ESP32) | `broker.hivemq.com`, TCP port `1883` |
+| Broker (browsers) | `wss://broker.hivemq.com:8884/mqtt` |
 | Topic root | `ecocomp/smartfarm/<farm_id>` |
 | Demo farm id | `iringa-demo` (each team picks its own, e.g. `team-3`) |
 
