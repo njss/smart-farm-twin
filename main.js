@@ -292,16 +292,20 @@ function connect() {
 
 // Offline fallback so the twin can still be shown with no internet or no simulator.
 // It understands the same scenarios as simulator.py, so the buttons also work in demo mode.
-const DEMO = {   // base temp, temp swing, humidity offset, rain mm/h, drying factor
-  normal: [17, 12, 0, 0, 1], drought: [20, 14, -15, 0, 2.5], heatwave: [24, 15, -20, 0, 3], heavy_rain: [16, 5, 12, 15, 0.2] };
+const DEMO = {   // base temp, temp swing, humidity change, rain mm/h, typical soil moisture (same as simulator.py)
+  normal: [17, 10, 0, 0, 32], drought: [24, 12, -30, 0, 11], heatwave: [30, 10, -35, 0, 15], heavy_rain: [16, 4, 15, 15, 52] };
 function demoTick() {
-  const hours = ((Date.now() - demoState.t0) / 1000) / 6 + 9;   // 6 real seconds = 1 farm hour
+  const hours = ((Date.now() - demoState.t0) / 1000) / 12 + 9;   // 12 real seconds = 1 farm hour
   const h = hours % 24, s = Math.max(0, Math.sin(Math.PI * (h - 6) / 12));
-  const [bt, sw, hum, rainMm, dry] = DEMO[demoState.scenario] || DEMO.normal;
-  demoState.m = THREE.MathUtils.clamp(demoState.m + (demoState.pump ? 0.8 : 0) + rainMm * 0.03 - 0.12 * dry * s, 8, 55);
+  const [bt, sw, hum, rainMm, soil] = DEMO[demoState.scenario] || DEMO.normal;
+  const k = 0.25;   // reacts within a few seconds
+  demoState.m += demoState.pump ? 2 : (soil - demoState.m) * k;
+  demoState.m = THREE.MathUtils.clamp(demoState.m, 8, 55);
+  demoState.t = (demoState.t ?? 20) + (bt + sw * s - (demoState.t ?? 20)) * k;
+  demoState.h = (demoState.h ?? 70) + ((rainMm ? 95 : THREE.MathUtils.clamp(88 - 45 * s + hum, 12, 98)) - (demoState.h ?? 70)) * k;
   updateTwin({ ts: new Date().toISOString(), sim_time: `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`,
-    soil_moisture: +demoState.m.toFixed(1), soil_temperature: +(bt + 1 + sw * 0.5 * s).toFixed(1), air_temperature: +(bt + sw * s).toFixed(1),
-    air_humidity: +THREE.MathUtils.clamp(85 + hum - 45 * s, 10, 98).toFixed(1), light: Math.round((rainMm ? 25000 : 95000) * s),
+    soil_moisture: +demoState.m.toFixed(1), soil_temperature: +(demoState.t - 2).toFixed(1), air_temperature: +demoState.t.toFixed(1),
+    air_humidity: +demoState.h.toFixed(1), light: Math.round((rainMm ? 20000 : 95000) * s),
     rainfall: rainMm, pump: demoState.pump ? "on" : "off", scenario: demoState.scenario, source: "demo" });
 }
 setInterval(() => {
