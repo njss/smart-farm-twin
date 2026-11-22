@@ -269,7 +269,7 @@ function updateTwin(r) {
 const farmInput = $("#farm");
 farmInput.value = params.get("farm") || cfg.defaultFarm;
 const topic = (s) => `${cfg.root}/${farmInput.value.trim() || cfg.defaultFarm}/${s}`;
-let client = null, lastMsg = 0, demo = params.get("demo") === "1", demoState = { m: 30, pump: false, t0: Date.now() };
+let client = null, lastMsg = 0, demo = params.get("demo") === "1", demoState = { m: 30, pump: false, scenario: "normal", t0: Date.now() };
 
 function setConn(on, text) { $("#conn").className = "dot " + (on ? "on" : "off"); $("#connText").textContent = text; }
 function updateChatLink() {
@@ -286,21 +286,26 @@ function connect() {
   client.on("close", () => setConn(false, "offline"));
   client.on("message", (t, buf) => {
     if (t.endsWith("/status")) { if (buf.toString() === "offline") setConn(false, "sensor kit offline"); return; }
-    try { lastMsg = Date.now(); updateTwin(JSON.parse(buf.toString())); setConn(true, "live"); } catch { /* ignore bad payloads */ }
+    try { lastMsg = Date.now(); demo = false; updateTwin(JSON.parse(buf.toString())); setConn(true, "live"); } catch { /* ignore bad payloads */ }
   });
 }
 
 // Offline fallback so the twin can still be shown with no internet or no simulator.
+// It understands the same scenarios as simulator.py, so the buttons also work in demo mode.
+const DEMO = {   // base temp, temp swing, humidity offset, rain mm/h, drying factor
+  normal: [17, 12, 0, 0, 1], drought: [20, 14, -15, 0, 2.5], heatwave: [24, 15, -20, 0, 3], heavy_rain: [16, 5, 12, 15, 0.2] };
 function demoTick() {
-  const hours = ((Date.now() - demoState.t0) / 1000) / 60 * 1.0 + 9;   // 1 real minute = 1 farm hour
+  const hours = ((Date.now() - demoState.t0) / 1000) / 6 + 9;   // 6 real seconds = 1 farm hour
   const h = hours % 24, s = Math.max(0, Math.sin(Math.PI * (h - 6) / 12));
-  demoState.m = THREE.MathUtils.clamp(demoState.m + (demoState.pump ? 0.6 : -0.08 * s), 8, 55);
+  const [bt, sw, hum, rainMm, dry] = DEMO[demoState.scenario] || DEMO.normal;
+  demoState.m = THREE.MathUtils.clamp(demoState.m + (demoState.pump ? 0.8 : 0) + rainMm * 0.03 - 0.12 * dry * s, 8, 55);
   updateTwin({ ts: new Date().toISOString(), sim_time: `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.floor((h % 1) * 60)).padStart(2, "0")}`,
-    soil_moisture: +demoState.m.toFixed(1), soil_temperature: +(18 + 6 * s).toFixed(1), air_temperature: +(17 + 12 * s).toFixed(1),
-    air_humidity: +(85 - 45 * s).toFixed(1), light: Math.round(95000 * s), rainfall: 0, pump: demoState.pump ? "on" : "off", source: "demo" });
+    soil_moisture: +demoState.m.toFixed(1), soil_temperature: +(bt + 1 + sw * 0.5 * s).toFixed(1), air_temperature: +(bt + sw * s).toFixed(1),
+    air_humidity: +THREE.MathUtils.clamp(85 + hum - 45 * s, 10, 98).toFixed(1), light: Math.round((rainMm ? 25000 : 95000) * s),
+    rainfall: rainMm, pump: demoState.pump ? "on" : "off", scenario: demoState.scenario, source: "demo" });
 }
 setInterval(() => {
-  if (!demo && Date.now() - lastMsg > 15000 && !reading) { demo = true; setConn(true, "demo data (no live sensors found)"); }
+  if (!demo && Date.now() - lastMsg > 15000) { demo = true; setConn(true, "demo data (no simulator running for this farm)"); }
   if (demo) demoTick();
 }, 1000);
 
@@ -310,7 +315,12 @@ $("#pumpBtn").addEventListener("click", () => {
   client?.publish(topic("cmd/pump"), JSON.stringify({ state: next }));
 });
 document.querySelectorAll("#scenarios button").forEach((b) => b.addEventListener("click", () => {
-  client?.publish(topic("cmd/scenario"), JSON.stringify({ scenario: b.dataset.s }));
+  const s = b.dataset.s;
+  if (demo) { demoState.scenario = s; demoTick(); }
+  else client?.publish(topic("cmd/scenario"), JSON.stringify({ scenario: s }));
+  $("#scenarioHint").textContent = demo
+    ? `Demo data switched to "${s}". Start simulator.py for live data.`
+    : `Sent "${s}" to the simulator for farm ${farmInput.value.trim()}. Watch the scenario row change.`;
 }));
 farmInput.addEventListener("change", () => { demo = false; reading = null; lastMsg = 0; connect(); });
 connect();

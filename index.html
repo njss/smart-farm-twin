@@ -24,6 +24,7 @@
       <tr data-key="light"><th>Light</th><td>–</td><td>lux</td></tr>
       <tr data-key="rainfall"><th>Rainfall</th><td>–</td><td>mm/h</td></tr>
       <tr data-key="pump"><th>Pump</th><td>–</td><td></td></tr>
+      <tr data-key="scenario"><th>Scenario</th><td>–</td><td></td></tr>
     </table>
     <div class="row">
       <button id="pumpBtn" disabled>Toggle pump</button>
@@ -37,7 +38,7 @@
         <button data-s="heatwave">Heatwave</button>
         <button data-s="heavy_rain">Heavy rain</button>
       </div>
-      <p class="hint">Only works while <code>simulator.py</code> is running for this farm.</p>
+      <p class="hint" id="scenarioHint">Changes the weather in <code>simulator.py</code> for this farm (or in the demo data if no simulator is running).</p>
     </details>
     <details>
       <summary>Add your own 3D models</summary>
