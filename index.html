@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Farm Digital Twin</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }
+  </script>
+</head>
+<body>
+  <div id="scene" aria-label="3D view of the smart farm"></div>
+
+  <aside class="hud">
+    <h1>🌱 Smart Farm Twin</h1>
+    <label>Farm <input id="farm" value="iringa-demo" spellcheck="false"></label>
+    <p class="status"><span id="conn" class="dot off"></span><span id="connText">connecting…</span> · <span id="clock">–</span></p>
+    <table id="values">
+      <tr data-key="soil_moisture"><th>Soil moisture</th><td>–</td><td>%</td></tr>
+      <tr data-key="soil_temperature"><th>Soil temperature</th><td>–</td><td>°C</td></tr>
+      <tr data-key="air_temperature"><th>Air temperature</th><td>–</td><td>°C</td></tr>
+      <tr data-key="air_humidity"><th>Air humidity</th><td>–</td><td>%</td></tr>
+      <tr data-key="light"><th>Light</th><td>–</td><td>lux</td></tr>
+      <tr data-key="rainfall"><th>Rainfall</th><td>–</td><td>mm/h</td></tr>
+      <tr data-key="pump"><th>Pump</th><td>–</td><td></td></tr>
+    </table>
+    <div class="row">
+      <button id="pumpBtn" disabled>Toggle pump</button>
+      <a id="chatLink" class="btn" target="_blank" rel="noopener">Ask the chatbot</a>
+    </div>
+    <details>
+      <summary>Simulator scenario</summary>
+      <div class="row wrap" id="scenarios">
+        <button data-s="normal">Normal</button>
+        <button data-s="drought">Drought</button>
+        <button data-s="heatwave">Heatwave</button>
+        <button data-s="heavy_rain">Heavy rain</button>
+      </div>
+      <p class="hint">Only works while <code>simulator.py</code> is running for this farm.</p>
+    </details>
+    <details>
+      <summary>Add your own 3D models</summary>
+      <p class="hint">Drop a <b>.glb</b> or <b>.gltf</b> file (for example from the Beestoon 3D generator) anywhere on the page, or
+        <label class="file">choose a file<input type="file" id="modelFile" accept=".glb,.gltf"></label>.
+        Click the ground to move the last model there.</p>
+      <ul id="models" class="hint"></ul>
+    </details>
+    <p class="hint" id="pick">Tip: click a sensor post to inspect it. Drag to orbit, scroll to zoom.</p>
+  </aside>
+
+  <div id="drop" class="drop">Drop your .glb model to place it on the farm</div>
+
+  <script src="vendor/mqtt.min.js"></script>
+  <script src="config.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
