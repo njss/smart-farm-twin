@@ -3,5 +3,5 @@ window.SMARTFARM = {
   brokerUrl: "wss://broker.emqx.io:8084/mqtt",
   root: "ecocomp/smartfarm",
   defaultFarm: "iringa-demo",
-  chatbotUrl: "https://smart-farm-chatbot.vercel.app",  // update after deploying the chatbot
+  chatbotUrl: "https://smart-farm-chatbot-six.vercel.app",  // update after deploying the chatbot
 };
